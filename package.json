@@ -1,0 +1,22 @@
+{
+  "name": "vue-todo-app",
+  "version": "1.0.0",
+  "description": "A simple Vue.js TODO application",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "serve": "vite preview",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "vue": "^3.3.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.28",
+    "@vitejs/plugin-vue": "^4.3.4",
+    "typescript": "^5.3.3",
+    "vite": "^4.4.9",
+    "vue-tsc": "^2.0.6"
+  }
+}
