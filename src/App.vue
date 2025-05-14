@@ -13,53 +13,65 @@
     </div>
     
     <ul class="todo-list">
-      <li v-for="(todo, index) in todos" :key="index" class="todo-item">
+      <li v-for="todo in todos" :key="todo.id" class="todo-item">
         <input 
           type="checkbox" 
           class="todo-checkbox" 
-          v-model="todo.completed"
+          :checked="todo.completed"
+          @change="toggleTodo(todo.id)"
         />
         <span class="todo-text" :class="{ completed: todo.completed }">
           {{ todo.text }}
         </span>
-        <button class="delete-button" @click="removeTodo(index)">削除</button>
+        <button class="delete-button" @click="removeTodo(todo.id)">削除</button>
       </li>
     </ul>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-
-interface Todo {
-  text: string;
-  completed: boolean;
-}
+import { defineComponent, computed, ref, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import { MutationType } from './store/modules/products/mutations';
 
 export default defineComponent({
-  data() {
-    return {
-      newTodo: '',
-      todos: [
-        { text: 'Vueの基本を学ぶ', completed: true },
-        { text: 'TODOアプリを作成する', completed: false },
-        { text: 'コンポーネントについて学ぶ', completed: false }
-      ] as Todo[]
-    };
-  },
-  methods: {
-    addTodo(): void {
-      if (this.newTodo.trim()) {
-        this.todos.push({
-          text: this.newTodo,
-          completed: false
-        });
-        this.newTodo = '';
+  setup() {
+    const store = useStore();
+    const newTodo = ref('');
+
+    // コンポーザブルでのストアの利用
+    const todos = computed(() => store.getters['todo/allTodos']);
+    
+    // 初期データのロード
+    onMounted(() => {
+      store.dispatch('todo/loadTodos');
+    });
+
+    // TODOの追加
+    const addTodo = () => {
+      if (newTodo.value.trim()) {
+        store.dispatch('todo/addTodo', newTodo.value);
+        newTodo.value = '';
       }
-    },
-    removeTodo(index: number): void {
-      this.todos.splice(index, 1);
-    }
+    };
+    
+    // TODOの削除
+    const removeTodo = (id: number) => {
+      store.dispatch('todo/removeTodo', id);
+    };
+    
+    // TODOの完了状態の切り替え
+    const toggleTodo = (id: number) => {
+      store.dispatch('todo/toggleTodo', id);
+    };
+
+    return {
+      newTodo,
+      todos,
+      addTodo,
+      removeTodo,
+      toggleTodo
+    };
   }
 });
 </script> 
