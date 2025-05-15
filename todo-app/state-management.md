@@ -99,6 +99,181 @@ export default createStore<RootState>({
    const todos = computed(() => store.getters['todo/allTodos']);
    ```
 
+## サイドエフェクト（副作用）の管理方法
+
+Vuexにおけるサイドエフェクトとは、状態変更以外の外部との相互作用（APIリクエスト、ローカルストレージ操作など）を指します。効果的なエフェクト管理は高品質なアプリケーション開発に不可欠です。
+
+### APIリクエストの処理
+
+```typescript
+// actions.ts内での実装例
+export const actions = {
+  async fetchTodos({ commit }) {
+    // ローディング状態を開始
+    commit('SET_LOADING', true);
+    
+    try {
+      // APIリクエストの実行
+      const response = await axios.get('/api/todos');
+      // 成功時の処理
+      commit('SET_TODOS', response.data);
+      return response.data;
+    } catch (error) {
+      // エラー処理
+      commit('SET_ERROR', error.message);
+      console.error('Todo取得エラー:', error);
+      throw error; // 必要に応じてエラーを上位に伝播
+    } finally {
+      // 処理完了時の共通処理
+      commit('SET_LOADING', false);
+    }
+  }
+};
+```
+
+### ローディング状態と読み込みエフェクトの管理
+
+ユーザー体験を向上させるために、データ取得中のローディング状態を適切に管理します：
+
+```typescript
+// state.ts
+export const state = {
+  todos: [],
+  loading: false,
+  error: null
+};
+
+// mutations.ts
+export const mutations = {
+  SET_LOADING(state, isLoading) {
+    state.loading = isLoading;
+  },
+  SET_ERROR(state, errorMessage) {
+    state.error = errorMessage;
+  }
+};
+
+// コンポーネント内での実装
+setup() {
+  const store = useStore();
+  
+  // ローディング状態を監視
+  const isLoading = computed(() => store.state.todo.loading);
+  const error = computed(() => store.state.todo.error);
+  
+  // データ取得と同時にローディング状態を表示
+  const fetchData = async () => {
+    try {
+      await store.dispatch('todo/fetchTodos');
+    } catch (e) {
+      // コンポーネントレベルでの追加エラー処理
+    }
+  };
+  
+  return { isLoading, error, fetchData };
+}
+```
+
+### ローカルストレージとの連携
+
+ユーザー設定や一時データを永続化する場合のエフェクト処理：
+
+```typescript
+// actions.ts
+export const actions = {
+  // ローカルストレージから状態を復元
+  initializeFromStorage({ commit }) {
+    try {
+      const savedTodos = localStorage.getItem('todos');
+      if (savedTodos) {
+        commit('SET_TODOS', JSON.parse(savedTodos));
+      }
+    } catch (e) {
+      console.error('ストレージからの読み込みエラー:', e);
+      // 必要に応じてフォールバック処理
+    }
+  },
+  
+  // 状態変更時にストレージも更新
+  saveTodo({ commit, state }, todo) {
+    commit('ADD_TODO', todo);
+    
+    // サイドエフェクト: ローカルストレージへの保存
+    try {
+      localStorage.setItem('todos', JSON.stringify(state.todos));
+    } catch (e) {
+      console.error('ストレージへの保存エラー:', e);
+    }
+  }
+};
+```
+
+### デバウンスとスロットルの実装
+
+ユーザー入力処理や頻繁なAPIリクエストを最適化するためのエフェクト：
+
+```typescript
+// actions.ts
+import debounce from 'lodash/debounce';
+
+// ストア外でデバウンス関数を作成
+const debouncedSearch = debounce(async (searchTerm, commit) => {
+  commit('SET_LOADING', true);
+  try {
+    const result = await api.searchTodos(searchTerm);
+    commit('SET_SEARCH_RESULTS', result);
+  } catch (e) {
+    commit('SET_ERROR', e.message);
+  } finally {
+    commit('SET_LOADING', false);
+  }
+}, 300); // 300ms待機
+
+export const actions = {
+  // デバウンスされた検索アクション
+  searchTodos({ commit }, searchTerm) {
+    commit('SET_SEARCH_TERM', searchTerm);
+    debouncedSearch(searchTerm, commit);
+  }
+};
+```
+
+### エフェクト管理のベストプラクティス
+
+1. **エラー処理の一元化**: すべてのエフェクトでエラー処理を統一的に実装する
+2. **ローディング状態の可視化**: ユーザーに処理状態を明示的に伝える
+3. **キャンセル可能な操作**: 長時間の処理は必要に応じてキャンセル可能にする
+4. **リトライメカニズム**: 一時的なネットワークエラーに対応するためのリトライ処理を実装
+
+```typescript
+// 高度なAPIリクエスト処理の例
+export const actions = {
+  async fetchTodosWithRetry({ commit }, { retryCount = 3, delay = 1000 } = {}) {
+    commit('SET_LOADING', true);
+    
+    let currentTry = 0;
+    
+    while (currentTry < retryCount) {
+      try {
+        const response = await axios.get('/api/todos');
+        commit('SET_TODOS', response.data);
+        commit('SET_LOADING', false);
+        return response.data;
+      } catch (error) {
+        currentTry++;
+        if (currentTry >= retryCount) {
+          commit('SET_ERROR', `リクエスト失敗（${retryCount}回試行）: ${error.message}`);
+          commit('SET_LOADING', false);
+          throw error;
+        }
+        // 待機してから再試行
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+};
+```
+
 ## Vue Composition APIでのストア利用方法
 
 ```typescript
