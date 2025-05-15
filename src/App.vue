@@ -13,7 +13,7 @@
         type="text" 
         class="todo-input" 
         v-model="newTodo" 
-        @keyup.enter="addTodo" 
+        @keydown.enter="(event) => !event.isComposing && addTodo()"
         placeholder="新しいタスクを入力..."
         :disabled="isLoading"
       />
