@@ -1,14 +1,31 @@
 import { ActionTree } from 'vuex';
 import { TodoState } from './types';
 import { RootState } from '../../types';
+// what is Mutations?
+
 import { MutationType } from './mutations';
 
 // TODOモジュールのアクション
 export const actions: ActionTree<TodoState, RootState> = {
   // 新しいTODOを追加
-  addTodo({ commit }, todoText: string) {
+  async addTodo({ commit }, todoText: string) {
     if (todoText.trim()) {
-      commit(MutationType.ADD_TODO, todoText);
+      // ローディング状態を開始
+      commit(MutationType.SET_LOADING, true);
+      
+      try {
+        // 10秒のディレイを追加（ユーザー要件）
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        
+        // 遅延後にTODOを追加
+        commit(MutationType.ADD_TODO, todoText);
+      } catch (error) {
+        // エラーがあれば処理
+        commit(MutationType.SET_ERROR, 'TODOの追加に失敗しました。');
+      } finally {
+        // ローディング状態を終了
+        commit(MutationType.SET_LOADING, false);
+      }
     }
   },
   
