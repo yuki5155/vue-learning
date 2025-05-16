@@ -1,5 +1,8 @@
 <template>
-  <div class="chat-page">
+  <div class="chat-page" :class="[
+    settings.darkMode ? 'dark-mode' : '', 
+    `font-size-${settings.fontSize}`
+  ]">
     <div class="sidebar">
       <div class="sidebar-header">
         <h2>スレッド一覧</h2>
@@ -97,7 +100,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted } from 'vue';
+import { defineComponent, ref, computed, onMounted, reactive } from 'vue';
 import { useStore } from 'vuex';
 import SettingsModal from '../components/SettingsModal.vue';
 
@@ -114,16 +117,37 @@ export default defineComponent({
     const newThreadTitle = ref('');
     const isSettingsOpen = ref(false);
     
+    // 設定の状態を保持
+    const settings = reactive({
+      darkMode: false,
+      fontSize: 'medium',
+      notifications: true,
+      notificationSound: true
+    });
+    
     // ストアからのデータ取得
     const threads = computed(() => store.getters['chat/allThreads']);
     const currentThreadId = computed(() => store.state.chat.currentThreadId);
     const currentThread = computed(() => store.getters['chat/currentThread']);
     const loading = computed(() => store.state.chat.loading);
     
-    // ページ読み込み時にスレッドをロード
+    // 設定を読み込む
+    const loadSettings = () => {
+      const savedSettings = store.getters['settings/getSettings'];
+      if (savedSettings) {
+        settings.darkMode = savedSettings.darkMode;
+        settings.fontSize = savedSettings.fontSize;
+        settings.notifications = savedSettings.notifications;
+        settings.notificationSound = savedSettings.notificationSound;
+      }
+    };
+    
+    // ページ読み込み時にスレッドと設定をロード
     onMounted(() => {
       store.dispatch('chat/loadThreads');
-      store.dispatch('settings/loadSettings');
+      store.dispatch('settings/loadSettings').then(() => {
+        loadSettings();
+      });
     });
     
     // 新規スレッド作成
@@ -165,7 +189,11 @@ export default defineComponent({
     // 設定が保存されたときの処理
     const onSettingsSave = (newSettings: any) => {
       console.log('設定が保存されました:', newSettings);
-      // ここで設定に応じたUIの更新などを行う
+      // 設定を反映
+      settings.darkMode = newSettings.darkMode;
+      settings.fontSize = newSettings.fontSize;
+      settings.notifications = newSettings.notifications;
+      settings.notificationSound = newSettings.notificationSound;
     };
     
     // 日付フォーマット
@@ -187,6 +215,7 @@ export default defineComponent({
       loading,
       newMessage,
       isSettingsOpen,
+      settings,
       createNewThread,
       selectThread,
       sendMessage,
@@ -214,8 +243,8 @@ export default defineComponent({
 
 .sidebar {
   width: 300px;
-  background-color: #f5f5f5;
-  border-right: 1px solid #e0e0e0;
+  background-color: #e0e0e0;
+  border-right: 1px solid #d0d0d0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -227,7 +256,7 @@ export default defineComponent({
 }
 
 .sidebar-header h2 {
-  color: #333;
+  color: #000000;
   font-weight: bold;
 }
 
@@ -250,31 +279,37 @@ export default defineComponent({
 
 .thread-item {
   padding: 1rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #d0d0d0;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: #e8e8e8;
 }
 
 .thread-item:hover {
-  background-color: #e6e6e6;
+  background-color: #d5d5d5;
 }
 
 .thread-item.active {
-  background-color: rgba(66, 185, 131, 0.1);
+  background-color: #c8e9d8;
   border-left: 4px solid #42b983;
 }
 
 .thread-title {
-  font-weight: bold;
+  font-weight: 700;
   margin-bottom: 0.5rem;
-  color: #333;
+  color: #000000;
+  letter-spacing: 0.02em;
+}
+
+.thread-item.active .thread-title {
+  color: #096144;
 }
 
 .thread-meta {
   font-size: 0.8rem;
-  color: #444;
+  color: #000000;
   display: flex;
   justify-content: space-between;
 }
@@ -317,17 +352,24 @@ export default defineComponent({
 }
 
 .no-thread-selected h2 {
-  color: #333;
+  color: #000000;
   font-weight: bold;
 }
 
 .chat-header {
   padding: 1rem;
   border-bottom: 1px solid #e0e0e0;
-  background-color: #f5f5f5;
+  background-color: #e0e0e0;
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.chat-header h2 {
+  color: #000000;
+  font-weight: 700;
+  margin: 0;
+  font-size: 1.2rem;
 }
 
 .header-actions {
@@ -405,8 +447,8 @@ export default defineComponent({
 
 .message.bot {
   align-self: flex-start;
-  background-color: #f1f1f1;
-  color: #333;
+  background-color: #e0e0e0;
+  color: #000000;
 }
 
 .message-text {
@@ -466,7 +508,7 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  color: #666;
+  color: #000000;
   text-align: center;
 }
 
@@ -489,5 +531,111 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+
+/* ダークモード */
+.dark-mode {
+  background-color: #1a1a1a;
+  color: #f5f5f5;
+}
+
+.dark-mode .sidebar {
+  background-color: #262626;
+  border-right-color: #333;
+}
+
+.dark-mode .sidebar-header {
+  border-bottom-color: #333;
+}
+
+.dark-mode .sidebar-header h2 {
+  color: #f5f5f5;
+}
+
+.dark-mode .thread-item {
+  border-bottom-color: #333;
+}
+
+.dark-mode .thread-item:hover {
+  background-color: #333;
+}
+
+.dark-mode .thread-item.active {
+  background-color: rgba(66, 185, 131, 0.2);
+}
+
+.dark-mode .thread-title {
+  color: #f5f5f5;
+}
+
+.dark-mode .thread-meta {
+  color: #aaa;
+}
+
+.dark-mode .chat-container {
+  background-color: #1a1a1a;
+}
+
+.dark-mode .chat-header {
+  background-color: #262626;
+  border-bottom-color: #333;
+}
+
+.dark-mode .message.bot {
+  background-color: #333;
+  color: #f5f5f5;
+}
+
+.dark-mode .message-input input {
+  background-color: #333;
+  color: #f5f5f5;
+  border-color: #444;
+}
+
+.dark-mode .message-input input::placeholder {
+  color: #aaa;
+}
+
+.dark-mode .no-thread-selected h2,
+.dark-mode .empty-messages p,
+.dark-mode .empty-state p {
+  color: #f5f5f5;
+}
+
+/* 文字サイズ */
+.font-size-small {
+  font-size: 0.9rem;
+}
+
+.font-size-medium {
+  font-size: 1rem;
+}
+
+.font-size-large {
+  font-size: 1.2rem;
+}
+
+.font-size-small .message {
+  font-size: 0.9rem;
+}
+
+.font-size-medium .message {
+  font-size: 1rem;
+}
+
+.font-size-large .message {
+  font-size: 1.2rem;
+}
+
+.font-size-small .thread-title {
+  font-size: 0.9rem;
+}
+
+.font-size-medium .thread-title {
+  font-size: 1rem;
+}
+
+.font-size-large .thread-title {
+  font-size: 1.1rem;
 }
 </style> 
