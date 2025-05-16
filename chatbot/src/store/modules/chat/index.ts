@@ -5,7 +5,7 @@ import { RootState } from '../../types';
 export interface Message {
   id: number;
   text: string;
-  sender: 'user' | 'bot';
+  sender: 'user' | 'assistant';
   timestamp: number;
 }
 
@@ -82,7 +82,7 @@ const chatModule: Module<ChatState, RootState> = {
       state.currentThreadId = newId;
     },
     
-    addMessage(state: ChatState, { threadId, text, sender }: { threadId: number, text: string, sender: 'user' | 'bot' }) {
+    addMessage(state: ChatState, { threadId, text, sender }: { threadId: number, text: string, sender: 'user' | 'assistant' }) {
       const thread = state.threads.find(t => t.id === threadId);
       
       if (thread) {
@@ -164,7 +164,7 @@ const chatModule: Module<ChatState, RootState> = {
         commit('addMessage', {
           threadId: state.currentThreadId,
           text: `「${text}」に対する応答です。これはシミュレートされたボットの返信です。`,
-          sender: 'bot'
+          sender: 'assistant'
         });
         
         dispatch('saveThreads');

@@ -471,7 +471,7 @@ export default defineComponent({
   color: white;
 }
 
-.message.bot {
+.message.assistant {
   align-self: flex-start;
   background-color: #e0e0e0;
   color: #000000;
@@ -607,7 +607,7 @@ export default defineComponent({
   border-bottom-color: #333;
 }
 
-.dark-mode .message.bot {
+.dark-mode .message.assistant {
   background-color: #333;
   color: #f5f5f5;
 }
