@@ -48,8 +48,9 @@
       <div v-else class="chat-area">
         <div class="chat-header">
           <h2>{{ currentThread.title }}</h2>
+          <div v-if="!currentThread.isActive" class="inactive-badge">無効化済み</div>
         </div>
-        <div class="messages">
+        <div :class="['messages', { 'inactive-thread': !currentThread.isActive }]">
           <div v-if="currentThread.messages.length === 0" class="empty-messages">
             <p>メッセージがありません。</p>
             <p>最初のメッセージを送信してください。</p>
@@ -70,10 +71,13 @@
             <input 
               v-model="newMessage" 
               placeholder="メッセージを入力..." 
-              :disabled="!currentThread"
+              :disabled="!currentThread || !currentThread.isActive"
             />
-            <button type="submit" :disabled="!newMessage || !currentThread">送信</button>
+            <button type="submit" :disabled="!newMessage || !currentThread || !currentThread.isActive">送信</button>
           </form>
+          <div v-if="currentThread && !currentThread.isActive" class="inactive-thread-notice">
+            このスレッドは無効化されています。メッセージを送信するには、スレッドを有効化してください。
+          </div>
         </div>
       </div>
     </div>
@@ -183,6 +187,11 @@ export default defineComponent({
   border-bottom: 1px solid #e0e0e0;
 }
 
+.sidebar-header h2 {
+  color: #333;
+  font-weight: bold;
+}
+
 .new-thread-btn {
   background-color: #42b983;
   color: white;
@@ -192,6 +201,7 @@ export default defineComponent({
   margin-top: 0.5rem;
   cursor: pointer;
   border-radius: 4px;
+  font-weight: 600;
 }
 
 .thread-list {
@@ -220,11 +230,12 @@ export default defineComponent({
 .thread-title {
   font-weight: bold;
   margin-bottom: 0.5rem;
+  color: #333;
 }
 
 .thread-meta {
   font-size: 0.8rem;
-  color: #666;
+  color: #444;
   display: flex;
   justify-content: space-between;
 }
@@ -235,6 +246,7 @@ export default defineComponent({
   border-radius: 10px;
   border: none;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .toggle-btn.active {
@@ -243,8 +255,8 @@ export default defineComponent({
 }
 
 .toggle-btn.inactive {
-  background-color: #ccc;
-  color: #666;
+  background-color: #999;
+  color: white;
 }
 
 .chat-container {
@@ -260,15 +272,32 @@ export default defineComponent({
   justify-content: center;
   align-items: center;
   height: 100%;
-  color: #666;
+  color: #333;
   text-align: center;
   padding: 2rem;
+}
+
+.no-thread-selected h2 {
+  color: #333;
+  font-weight: bold;
 }
 
 .chat-header {
   padding: 1rem;
   border-bottom: 1px solid #e0e0e0;
   background-color: #f5f5f5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inactive-badge {
+  background-color: #e74c3c;
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
 }
 
 .messages {
@@ -277,6 +306,22 @@ export default defineComponent({
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+.messages.inactive-thread {
+  background-color: rgba(231, 76, 60, 0.05);
+  position: relative;
+}
+
+.messages.inactive-thread::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(240, 240, 240, 0.5);
+  pointer-events: none;
 }
 
 .message {
@@ -338,6 +383,16 @@ export default defineComponent({
 .message-input button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+}
+
+.inactive-thread-notice {
+  margin-top: 0.5rem;
+  color: #e74c3c;
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 0.5rem;
+  background-color: #fadbd8;
+  border-radius: 4px;
 }
 
 .loading, .empty-state, .empty-messages {
