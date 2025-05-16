@@ -48,7 +48,12 @@
       <div v-else class="chat-area">
         <div class="chat-header">
           <h2>{{ currentThread.title }}</h2>
-          <div v-if="!currentThread.isActive" class="inactive-badge">無効化済み</div>
+          <div class="header-actions">
+            <div v-if="!currentThread.isActive" class="inactive-badge">無効化済み</div>
+            <button class="settings-btn" @click="openSettings">
+              <span class="settings-icon">⚙️</span>
+            </button>
+          </div>
         </div>
         <div :class="['messages', { 'inactive-thread': !currentThread.isActive }]">
           <div v-if="currentThread.messages.length === 0" class="empty-messages">
@@ -81,20 +86,33 @@
         </div>
       </div>
     </div>
+    
+    <!-- 設定モーダル -->
+    <SettingsModal 
+      :isOpen="isSettingsOpen" 
+      @close="closeSettings"
+      @save="onSettingsSave"
+    />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
+import SettingsModal from '../components/SettingsModal.vue';
 
 export default defineComponent({
   name: 'ChatPage',
+  
+  components: {
+    SettingsModal
+  },
   
   setup() {
     const store = useStore();
     const newMessage = ref('');
     const newThreadTitle = ref('');
+    const isSettingsOpen = ref(false);
     
     // ストアからのデータ取得
     const threads = computed(() => store.getters['chat/allThreads']);
@@ -105,6 +123,7 @@ export default defineComponent({
     // ページ読み込み時にスレッドをロード
     onMounted(() => {
       store.dispatch('chat/loadThreads');
+      store.dispatch('settings/loadSettings');
     });
     
     // 新規スレッド作成
@@ -133,6 +152,22 @@ export default defineComponent({
       store.dispatch('chat/toggleThread', threadId);
     };
     
+    // 設定モーダルを開く
+    const openSettings = () => {
+      isSettingsOpen.value = true;
+    };
+    
+    // 設定モーダルを閉じる
+    const closeSettings = () => {
+      isSettingsOpen.value = false;
+    };
+    
+    // 設定が保存されたときの処理
+    const onSettingsSave = (newSettings: any) => {
+      console.log('設定が保存されました:', newSettings);
+      // ここで設定に応じたUIの更新などを行う
+    };
+    
     // 日付フォーマット
     const formatDate = (timestamp: number) => {
       const date = new Date(timestamp);
@@ -151,10 +186,14 @@ export default defineComponent({
       currentThread,
       loading,
       newMessage,
+      isSettingsOpen,
       createNewThread,
       selectThread,
       sendMessage,
       toggleThreadActive,
+      openSettings,
+      closeSettings,
+      onSettingsSave,
       formatDate,
       formatTime
     };
@@ -291,6 +330,12 @@ export default defineComponent({
   align-items: center;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .inactive-badge {
   background-color: #e74c3c;
   color: white;
@@ -298,6 +343,26 @@ export default defineComponent({
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: bold;
+}
+
+.settings-btn {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.settings-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.settings-icon {
+  font-size: 1.2rem;
 }
 
 .messages {

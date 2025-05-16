@@ -2,6 +2,7 @@ import { createStore } from 'vuex';
 import { RootState } from './types';
 import chatModule from './modules/chat';
 import authModule from './modules/auth';
+import settingsModule from './modules/settings';
 
 export default createStore<RootState>({
   state: {
@@ -9,6 +10,7 @@ export default createStore<RootState>({
   },
   modules: {
     chat: chatModule,
-    auth: authModule
+    auth: authModule,
+    settings: settingsModule
   }
 }); 
