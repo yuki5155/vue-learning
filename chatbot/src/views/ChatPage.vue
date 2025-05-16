@@ -75,6 +75,17 @@
           </div>
         </div>
         <div class="message-input">
+          <div class="preset-buttons">
+            <button 
+              v-for="(preset, index) in presets" 
+              :key="index" 
+              @click="usePreset(preset)"
+              :disabled="!currentThread || !currentThread.isActive"
+              class="preset-button"
+            >
+              {{ preset.label }}
+            </button>
+          </div>
           <form @submit.prevent="sendMessage">
             <input 
               v-model="newMessage" 
@@ -124,6 +135,14 @@ export default defineComponent({
       notifications: true,
       notificationSound: true
     });
+    
+    // プリセットメッセージの定義
+    const presets = reactive([
+      { label: '自己紹介', text: 'こんにちは！あなたについて教えてください。' },
+      { label: '機能説明', text: 'このチャットボットでできることを教えてください。' },
+      { label: 'ヘルプ', text: '使い方について教えてください。' },
+      { label: '雑談', text: '今日の天気はどうですか？' }
+    ]);
     
     // ストアからのデータ取得
     const threads = computed(() => store.getters['chat/allThreads']);
@@ -196,6 +215,11 @@ export default defineComponent({
       settings.notificationSound = newSettings.notificationSound;
     };
     
+    // プリセットメッセージを使用する
+    const usePreset = (preset: { label: string, text: string }) => {
+      newMessage.value = preset.text;
+    };
+    
     // 日付フォーマット
     const formatDate = (timestamp: number) => {
       const date = new Date(timestamp);
@@ -216,6 +240,8 @@ export default defineComponent({
       newMessage,
       isSettingsOpen,
       settings,
+      presets,
+      usePreset,
       createNewThread,
       selectThread,
       sendMessage,
@@ -637,5 +663,41 @@ export default defineComponent({
 
 .font-size-large .thread-title {
   font-size: 1.1rem;
+}
+
+.preset-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.preset-button {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-button:hover {
+  background-color: #e0e0e0;
+}
+
+.preset-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dark-mode .preset-button {
+  background-color: #444;
+  border-color: #555;
+  color: #ddd;
+}
+
+.dark-mode .preset-button:hover {
+  background-color: #555;
 }
 </style> 
