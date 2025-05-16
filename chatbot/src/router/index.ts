@@ -10,7 +10,10 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/chat',
     name: 'Chat',
-    component: () => import('../views/ChatPage.vue')
+    component: () => import('../views/ChatPage.vue'),
+    meta: {
+      requiresAuth: true
+    }
   },
   {
     path: '/mypage',
